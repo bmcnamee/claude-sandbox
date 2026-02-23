@@ -2,20 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tic Tac Toe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Slide Puzzle</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg: #080810;
-      --x-color: #ff2d6b;
-      --o-color: #00e5ff;
-      --grid: #1a1a2e;
+      --accent: #00e5ff;
+      --accent2: #ff2d6b;
+      --grid-bg: #1a1a2e;
       --line: #2a2a4a;
-      --glow-x: 0 0 20px #ff2d6b, 0 0 40px #ff2d6b66;
-      --glow-o: 0 0 20px #00e5ff, 0 0 40px #00e5ff66;
+      --glow: 0 0 18px #00e5ff, 0 0 36px #00e5ff55;
+      --glow2: 0 0 18px #ff2d6b, 0 0 36px #ff2d6b55;
+      --size: min(92vw, 480px);
+      --tile: calc(var(--size) / 5);
     }
 
     body {
@@ -27,352 +29,518 @@
       justify-content: center;
       font-family: 'Share Tech Mono', monospace;
       color: #fff;
-      padding: 1.5rem;
+      padding: 1rem;
       overflow: hidden;
     }
 
-    /* Scanline effect */
     body::after {
       content: '';
       position: fixed;
       inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.08) 2px,
-        rgba(0,0,0,0.08) 4px
-      );
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
       pointer-events: none;
       z-index: 999;
-    }
-
-    /* Starfield */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.2) 0%, transparent 100%),
-        radial-gradient(1px 1px at 50% 40%, rgba(255,255,255,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.2) 0%, transparent 100%),
-        radial-gradient(1px 1px at 85% 15%, rgba(255,255,255,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.2) 0%, transparent 100%),
-        radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
-        radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.3) 0%, transparent 100%);
-      pointer-events: none;
     }
 
     h1 {
       font-family: 'Orbitron', sans-serif;
       font-weight: 900;
-      font-size: clamp(1.4rem, 6vw, 2.2rem);
+      font-size: clamp(1.2rem, 5vw, 1.8rem);
       letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-bottom: 0.3rem;
-      background: linear-gradient(90deg, var(--x-color), var(--o-color));
+      margin-bottom: 0.25rem;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
     .subtitle {
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       letter-spacing: 0.3em;
       color: #444466;
-      margin-bottom: 2rem;
       text-transform: uppercase;
+      margin-bottom: 1.2rem;
     }
 
-    /* Score board */
-    .scoreboard {
+    /* Stats bar */
+    .stats {
       display: flex;
-      gap: 2rem;
-      margin-bottom: 1.8rem;
+      gap: 2.5rem;
+      margin-bottom: 1rem;
       align-items: center;
     }
 
-    .score {
-      text-align: center;
-      min-width: 70px;
-    }
+    .stat { text-align: center; }
 
-    .score-label {
-      font-size: 0.6rem;
+    .stat-label {
+      font-size: 0.5rem;
       letter-spacing: 0.2em;
-      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      color: #444466;
+      margin-bottom: 0.2rem;
     }
 
-    .score-label.x { color: var(--x-color); }
-    .score-label.o { color: var(--o-color); }
-
-    .score-value {
+    .stat-value {
       font-family: 'Orbitron', sans-serif;
-      font-size: 2rem;
+      font-size: 1.1rem;
       font-weight: 700;
+      color: var(--accent);
+      text-shadow: var(--glow);
+      font-variant-numeric: tabular-nums;
+      min-width: 4ch;
+      display: inline-block;
+      text-align: center;
     }
 
-    .score-value.x {
-      color: var(--x-color);
-      text-shadow: var(--glow-x);
-    }
-
-    .score-value.o {
-      color: var(--o-color);
-      text-shadow: var(--glow-o);
-    }
-
-    .score-divider {
-      font-size: 0.6rem;
-      color: #333355;
-      letter-spacing: 0.1em;
-    }
-
-    /* Status */
-    .status {
-      font-size: 0.75rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      height: 1.2rem;
-      margin-bottom: 1.5rem;
-      transition: color 0.3s;
-    }
-
-    .status.x-turn { color: var(--x-color); text-shadow: var(--glow-x); }
-    .status.o-turn { color: var(--o-color); text-shadow: var(--glow-o); }
-    .status.winner-x { color: var(--x-color); text-shadow: var(--glow-x); }
-    .status.winner-o { color: var(--o-color); text-shadow: var(--glow-o); }
-    .status.draw { color: #888899; }
-
-    /* Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 3px;
+    /* Puzzle board */
+    .board-wrap {
+      position: relative;
+      width: var(--size);
+      height: var(--size);
       background: var(--line);
-      border: 3px solid var(--line);
+      border: 2px solid var(--line);
       border-radius: 4px;
-      box-shadow: 0 0 40px rgba(0,0,0,0.8);
-      position: relative;
+      box-shadow: 0 0 60px rgba(0,0,0,0.9), 0 0 2px var(--accent);
+      overflow: hidden;
     }
 
-    .cell {
-      width: clamp(90px, 25vw, 120px);
-      height: clamp(90px, 25vw, 120px);
-      background: var(--grid);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .tile {
+      position: absolute;
+      width: var(--tile);
+      height: var(--tile);
+      background-size: calc(var(--size)) calc(var(--size));
       cursor: pointer;
-      font-family: 'Orbitron', sans-serif;
-      font-size: clamp(2rem, 8vw, 3rem);
-      font-weight: 900;
-      transition: background 0.15s;
-      position: relative;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      border: 1.5px solid rgba(0,229,255,0.12);
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
 
-    .cell:hover:not(.taken) {
-      background: #12122a;
+    .tile:hover:not(.empty) {
+      box-shadow: inset 0 0 0 2px rgba(0,229,255,0.4);
+      z-index: 2;
     }
 
-    .cell.x {
-      color: var(--x-color);
-      text-shadow: var(--glow-x);
-      animation: popIn 0.2s ease;
+    .tile.empty {
+      background: var(--bg) !important;
+      cursor: default;
+      border-color: transparent;
     }
 
-    .cell.o {
-      color: var(--o-color);
-      text-shadow: var(--glow-o);
-      animation: popIn 0.2s ease;
+    .tile.sliding {
+      transition: transform 0.12s ease;
+      z-index: 3;
     }
 
-    .cell.win-cell.x {
-      background: rgba(255, 45, 107, 0.15);
-      animation: pulse-x 0.8s ease infinite alternate;
+    /* Win overlay */
+    .win-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8,8,16,0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      z-index: 10;
     }
 
-    .cell.win-cell.o {
-      background: rgba(0, 229, 255, 0.15);
-      animation: pulse-o 0.8s ease infinite alternate;
+    .win-overlay.show {
+      opacity: 1;
+      pointer-events: all;
     }
 
-    @keyframes popIn {
-      from { transform: scale(0.5); opacity: 0; }
-      to   { transform: scale(1); opacity: 1; }
-    }
-
-    @keyframes pulse-x {
-      from { background: rgba(255,45,107,0.1); }
-      to   { background: rgba(255,45,107,0.25); }
-    }
-
-    @keyframes pulse-o {
-      from { background: rgba(0,229,255,0.1); }
-      to   { background: rgba(0,229,255,0.25); }
-    }
-
-    /* Reset button */
-    .btn {
-      margin-top: 2rem;
+    .win-title {
       font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 1.6rem;
+      color: var(--accent);
+      text-shadow: var(--glow);
+      letter-spacing: 0.1em;
+    }
+
+    .win-stats {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: #888899;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    /* Status line */
+    .status {
       font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #444466;
+      margin-top: 0.8rem;
+      height: 1rem;
+    }
+
+    /* Buttons */
+    .buttons { display: flex; gap: 1rem; margin-top: 1.2rem; }
+
+    .btn {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: #888899;
       background: transparent;
       border: 1px solid #2a2a4a;
-      padding: 0.7rem 2rem;
+      padding: 0.6rem 1.5rem;
       cursor: pointer;
       transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .btn:hover, .btn:active {
-      color: #fff;
-      border-color: #555577;
-      background: #12122a;
+    .btn:hover, .btn:active { color: #fff; border-color: #555577; background: #12122a; }
+
+    .btn.primary {
+      color: var(--accent);
+      border-color: var(--accent);
     }
 
-    /* Current player indicator */
-    .turn-indicator {
+    .btn.primary:hover, .btn.primary:active {
+      background: rgba(0,229,255,0.1);
+      box-shadow: var(--glow);
+    }
+
+    /* Loading state */
+    .loading {
       display: flex;
-      gap: 1rem;
-      margin-top: 1.5rem;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
+      width: var(--size);
+      height: var(--size);
+      background: var(--grid-bg);
+      border: 2px solid var(--line);
+      border-radius: 4px;
+      gap: 1rem;
     }
 
-    .pip {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      transition: all 0.3s;
+    .loading-text {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #444466;
     }
 
-    .pip.x { background: var(--x-color); }
-    .pip.o { background: var(--o-color); }
-    .pip.active { transform: scale(1.8); }
-    .pip.x.active { box-shadow: var(--glow-x); }
-    .pip.o.active { box-shadow: var(--glow-o); }
-    .pip:not(.active) { opacity: 0.2; }
+    .loading-bar {
+      width: 120px;
+      height: 2px;
+      background: var(--line);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .loading-bar::after {
+      content: '';
+      position: absolute;
+      left: -50%;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      background: var(--accent);
+      box-shadow: var(--glow);
+      animation: scan 1s linear infinite;
+    }
+
+    @keyframes scan {
+      from { left: -50%; }
+      to   { left: 150%; }
+    }
+
+    .error-text {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: var(--accent2);
+      text-align: center;
+      padding: 1rem;
+      line-height: 1.8;
+      max-width: 80%;
+    }
   </style>
 </head>
 <body>
 
-  <h1>Tic Tac Toe</h1>
-  <div class="subtitle">2 — Player</div>
+  <h1>Slide Puzzle</h1>
+  <div class="subtitle">5 × 5 — Hard Mode</div>
 
-  <div class="scoreboard">
-    <div class="score">
-      <div class="score-label x">Player X</div>
-      <div class="score-value x" id="score-x">0</div>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Moves</div>
+      <div class="stat-value" id="moves">0</div>
     </div>
-    <div class="score-divider">VS</div>
-    <div class="score">
-      <div class="score-label o">Player O</div>
-      <div class="score-value o" id="score-o">0</div>
+    <div class="stat">
+      <div class="stat-label">Time</div>
+      <div class="stat-value" id="timer">0:00</div>
     </div>
   </div>
 
-  <div class="status x-turn" id="status">X — Your Turn</div>
-
-  <div class="grid" id="grid">
-    <div class="cell" data-i="0"></div>
-    <div class="cell" data-i="1"></div>
-    <div class="cell" data-i="2"></div>
-    <div class="cell" data-i="3"></div>
-    <div class="cell" data-i="4"></div>
-    <div class="cell" data-i="5"></div>
-    <div class="cell" data-i="6"></div>
-    <div class="cell" data-i="7"></div>
-    <div class="cell" data-i="8"></div>
+  <div id="board-container">
+    <div class="loading" id="loading">
+      <div class="loading-text">Loading puzzle.jpg…</div>
+      <div class="loading-bar"></div>
+    </div>
   </div>
 
-  <div class="turn-indicator">
-    <div class="pip x active" id="pip-x"></div>
-    <div class="pip o" id="pip-o"></div>
-  </div>
+  <div class="status" id="status"></div>
 
-  <button class="btn" id="reset-btn">New Game</button>
+  <div class="buttons">
+    <button class="btn primary" id="shuffle-btn" style="display:none">Shuffle</button>
+    <button class="btn" id="reset-btn" style="display:none">Reset</button>
+  </div>
 
   <script>
-    const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-    let board = Array(9).fill(null);
-    let current = 'X';
-    let gameOver = false;
-    let scores = { X: 0, O: 0 };
+    const GRID = 5;
+    const TOTAL = GRID * GRID;
+    const EMPTY = TOTAL - 1; // index of empty tile (bottom-right when solved)
 
-    const cells = document.querySelectorAll('.cell');
-    const status = document.getElementById('status');
-    const pipX = document.getElementById('pip-x');
-    const pipO = document.getElementById('pip-o');
+    let tiles = [];       // current positions: tiles[i] = which puzzle piece is at slot i
+    let tileEls = [];     // DOM elements indexed by piece number
+    let moves = 0;
+    let timerInterval = null;
+    let seconds = 0;
+    let started = false;
+    let solved = false;
+    let imgSize = 0;
 
-    function updateStatus() {
-      if (!gameOver) {
-        status.textContent = current + ' — Your Turn';
-        status.className = 'status ' + (current === 'X' ? 'x-turn' : 'o-turn');
-        pipX.classList.toggle('active', current === 'X');
-        pipO.classList.toggle('active', current === 'O');
+    const movesEl = document.getElementById('moves');
+    const timerEl = document.getElementById('timer');
+    const statusEl = document.getElementById('status');
+    const shuffleBtn = document.getElementById('shuffle-btn');
+    const resetBtn = document.getElementById('reset-btn');
+
+    function formatTime(s) {
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return m + ':' + String(sec).padStart(2, '0');
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        seconds++;
+        timerEl.textContent = formatTime(seconds);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    function resetTimer() {
+      stopTimer();
+      seconds = 0;
+      timerEl.textContent = '0:00';
+    }
+
+    // Build the board DOM
+    function buildBoard(imgUrl) {
+      const container = document.getElementById('board-container');
+      container.innerHTML = '';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'board-wrap';
+      wrap.id = 'board-wrap';
+      container.appendChild(wrap);
+
+      // Win overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'win-overlay';
+      overlay.id = 'win-overlay';
+      overlay.innerHTML = `
+        <div class="win-title">Solved!</div>
+        <div class="win-stats" id="win-stats"></div>
+      `;
+      wrap.appendChild(overlay);
+
+      // Solved state: tiles[i] = i
+      tiles = Array.from({length: TOTAL}, (_, i) => i);
+      tileEls = [];
+
+      for (let piece = 0; piece < TOTAL; piece++) {
+        const el = document.createElement('div');
+        el.className = 'tile' + (piece === EMPTY ? ' empty' : '');
+        if (piece !== EMPTY) {
+          const px = (piece % GRID) * imgSize;
+          const py = Math.floor(piece / GRID) * imgSize;
+          el.style.backgroundImage = `url('${imgUrl}')`;
+          el.style.backgroundPosition = `-${px}px -${py}px`;
+        }
+        el.addEventListener('click', () => onTileClick(piece));
+        el.addEventListener('touchend', (e) => { e.preventDefault(); onTileClick(piece); });
+        wrap.appendChild(el);
+        tileEls.push(el);
+      }
+
+      positionAll();
+      shuffleBtn.style.display = '';
+      resetBtn.style.display = '';
+      statusEl.textContent = 'Tap a tile next to the gap to move it';
+    }
+
+    // Position all tile DOM elements based on current tiles[] state
+    function positionAll() {
+      const tileSize = imgSize; // same as tile CSS size
+      for (let slot = 0; slot < TOTAL; slot++) {
+        const piece = tiles[slot];
+        const el = tileEls[piece];
+        const col = slot % GRID;
+        const row = Math.floor(slot / GRID);
+        el.style.transform = `translate(${col * tileSize}px, ${row * tileSize}px)`;
       }
     }
 
-    function checkWinner() {
-      for (const [a,b,c] of WINS) {
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-          return { winner: board[a], line: [a,b,c] };
-        }
-      }
-      if (board.every(c => c)) return { winner: null, draw: true };
-      return null;
+    // Find slot of a piece
+    function slotOf(piece) {
+      return tiles.indexOf(piece);
     }
 
-    cells.forEach(cell => {
-      cell.addEventListener('click', () => {
-        const i = parseInt(cell.dataset.i);
-        if (gameOver || board[i]) return;
+    // Find slot of empty
+    function emptySlot() {
+      return slotOf(EMPTY);
+    }
 
-        board[i] = current;
-        cell.textContent = current;
-        cell.classList.add(current.toLowerCase(), 'taken');
+    // Get adjacent slots to empty that can move
+    function movableSlots() {
+      const es = emptySlot();
+      const eCol = es % GRID;
+      const eRow = Math.floor(es / GRID);
+      const adj = [];
+      if (eCol > 0) adj.push(es - 1);
+      if (eCol < GRID - 1) adj.push(es + 1);
+      if (eRow > 0) adj.push(es - GRID);
+      if (eRow < GRID - 1) adj.push(es + GRID);
+      return adj;
+    }
 
-        const result = checkWinner();
-        if (result) {
-          gameOver = true;
-          if (result.draw) {
-            status.textContent = 'Draw — Well Played';
-            status.className = 'status draw';
-            pipX.classList.remove('active');
-            pipO.classList.remove('active');
-          } else {
-            scores[result.winner]++;
-            document.getElementById('score-' + result.winner.toLowerCase()).textContent = scores[result.winner];
-            result.line.forEach(idx => cells[idx].classList.add('win-cell'));
-            status.textContent = result.winner + ' — Wins!';
-            status.className = 'status winner-' + result.winner.toLowerCase();
-            pipX.classList.remove('active');
-            pipO.classList.remove('active');
-          }
-        } else {
-          current = current === 'X' ? 'O' : 'X';
-          updateStatus();
-        }
-      });
+    function onTileClick(piece) {
+      if (solved) return;
+      if (piece === EMPTY) return;
+
+      const pieceSlot = slotOf(piece);
+      const es = emptySlot();
+
+      // Check if adjacent
+      const movable = movableSlots();
+      if (!movable.includes(pieceSlot)) return;
+
+      // Swap
+      tiles[es] = piece;
+      tiles[pieceSlot] = EMPTY;
+      positionAll();
+
+      if (!started) {
+        started = true;
+        startTimer();
+        statusEl.textContent = '';
+      }
+
+      moves++;
+      movesEl.textContent = moves;
+
+      if (checkSolved()) {
+        stopTimer();
+        solved = true;
+        statusEl.textContent = '';
+        document.getElementById('win-stats').innerHTML =
+          `Moves: ${moves}<br>Time: ${formatTime(seconds)}`;
+        setTimeout(() => {
+          document.getElementById('win-overlay').classList.add('show');
+        }, 300);
+      }
+    }
+
+    function checkSolved() {
+      for (let i = 0; i < TOTAL; i++) {
+        if (tiles[i] !== i) return false;
+      }
+      return true;
+    }
+
+    // Fisher-Yates shuffle that guarantees solvability
+    function shuffle() {
+      // Reset first
+      tiles = Array.from({length: TOTAL}, (_, i) => i);
+
+      // Do random valid moves (guarantees solvability)
+      let lastEmpty = -1;
+      for (let i = 0; i < 500; i++) {
+        const movable = movableSlots().filter(s => s !== lastEmpty);
+        const pick = movable[Math.floor(Math.random() * movable.length)];
+        const es = emptySlot();
+        lastEmpty = es;
+        tiles[es] = tiles[pick];
+        tiles[pick] = EMPTY;
+      }
+
+      positionAll();
+      moves = 0;
+      movesEl.textContent = '0';
+      resetTimer();
+      started = false;
+      solved = false;
+      document.getElementById('win-overlay').classList.remove('show');
+      statusEl.textContent = 'Tap a tile next to the gap to move it';
+    }
+
+    shuffleBtn.addEventListener('click', shuffle);
+    resetBtn.addEventListener('click', () => {
+      tiles = Array.from({length: TOTAL}, (_, i) => i);
+      positionAll();
+      moves = 0;
+      movesEl.textContent = '0';
+      resetTimer();
+      started = false;
+      solved = false;
+      document.getElementById('win-overlay').classList.remove('show');
+      statusEl.textContent = 'Tap a tile next to the gap to move it';
     });
 
-    document.getElementById('reset-btn').addEventListener('click', () => {
-      board = Array(9).fill(null);
-      current = 'X';
-      gameOver = false;
-      cells.forEach(cell => {
-        cell.textContent = '';
-        cell.className = 'cell';
-      });
-      updateStatus();
-    });
+    // Load image
+    function init() {
+      const cssSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--size'));
+      // Compute pixel size from CSS var
+      const dummy = document.createElement('div');
+      dummy.style.width = 'min(92vw, 480px)';
+      dummy.style.position = 'absolute';
+      dummy.style.visibility = 'hidden';
+      document.body.appendChild(dummy);
+      imgSize = dummy.offsetWidth / GRID;
+      document.body.removeChild(dummy);
 
-    updateStatus();
+      // Also set the CSS variable for tile size
+      document.documentElement.style.setProperty('--tile', imgSize + 'px');
+      document.documentElement.style.setProperty('--size', (imgSize * GRID) + 'px');
+
+      const img = new Image();
+      img.onload = () => {
+        buildBoard('puzzle.jpg');
+        shuffle();
+      };
+      img.onerror = () => {
+        const container = document.getElementById('board-container');
+        container.innerHTML = `
+          <div class="loading">
+            <div class="error-text">
+              Could not load puzzle.jpg<br><br>
+              Upload a file named <strong>puzzle.jpg</strong><br>
+              to your GitHub repo alongside<br>
+              this index.html file.
+            </div>
+          </div>`;
+      };
+      img.src = 'puzzle.jpg';
+    }
+
+    window.addEventListener('load', init);
   </script>
 </body>
 </html>
