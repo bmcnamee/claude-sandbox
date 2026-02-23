@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude Sandbox</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;900&family=IBM+Plex+Mono:wght@300;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #0e0e0e;
+      --paper: #f5f0e8;
+      --accent: #d4401a;
+      --mid: #8a8070;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'IBM Plex Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .badge {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--mid);
+      border: 1px solid var(--mid);
+      padding: 0.3rem 0.8rem;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.2s ease forwards;
+    }
+
+    .headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3.5rem, 12vw, 9rem);
+      font-weight: 900;
+      line-height: 0.9;
+      text-align: center;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.4s ease forwards;
+    }
+
+    .headline em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .divider {
+      width: 100%;
+      max-width: 540px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--ink) 30%, var(--ink) 70%, transparent);
+      margin: 2.5rem 0;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.6s ease forwards;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 2rem;
+      text-align: center;
+      max-width: 480px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.8s ease forwards;
+    }
+
+    .meta-item label {
+      display: block;
+      font-size: 0.55rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 0.3rem;
+    }
+
+    .meta-item span {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    #clock { font-variant-numeric: tabular-nums; }
+
+    .cta {
+      margin-top: 3rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--paper);
+      background: var(--ink);
+      border: none;
+      padding: 0.9rem 2.2rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: color 0.3s;
+      opacity: 0;
+      animation: fadeUp 0.6s 1s ease forwards;
+    }
+
+    .cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: translateX(-100%);
+      transition: transform 0.35s ease;
+    }
+
+    .cta:hover::before { transform: translateX(0); }
+    .cta span { position: relative; z-index: 1; }
+
+    .corner {
+      position: fixed;
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      color: var(--mid);
+      text-transform: uppercase;
+    }
+    .corner.tl { top: 1.5rem; left: 1.5rem; }
+    .corner.br { bottom: 1.5rem; right: 1.5rem; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <span class="corner tl">Claude&nbsp;Sandbox</span>
+  <span class="corner br">v1.0.0</span>
+
+  <div class="badge">Test deployment</div>
+
+  <h1 class="headline">It <em>works.</em></h1>
+
+  <div class="divider"></div>
+
+  <div class="meta">
+    <div class="meta-item">
+      <label>Status</label>
+      <span>✓ Live</span>
+    </div>
+    <div class="meta-item">
+      <label>Time</label>
+      <span id="clock">—</span>
+    </div>
+    <div class="meta-item">
+      <label>Built by</label>
+      <span>Claude</span>
+    </div>
+  </div>
+
+  <button class="cta"><span>Ping the page</span></button>
+
+  <script>
+    function tick() {
+      const now = new Date();
+      document.getElementById('clock').textContent =
+        now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    document.querySelector('.cta').addEventListener('click', function() {
+      this.querySelector('span').textContent = 'Pong! ✓';
+      setTimeout(() => this.querySelector('span').textContent = 'Ping the page', 1500);
+    });
+  </script>
+</body>
+</html>
